@@ -1,0 +1,78 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Template that creates a S3 bucket and a Lambda function that will be invoked when new objects are upload to the bucket.",
+  "Parameters": {
+    "BucketName": {
+      "Type": "String",
+      "Description": "lab4-img-bin",
+      "MinLength": "0"
+    }
+  },
+  "Conditions": {
+    "BucketNameGenerated": {
+      "Fn::Equals": [
+        {
+          "Ref": "BucketName"
+        },
+        ""
+      ]
+    }
+  },
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::If": [
+            "BucketNameGenerated",
+            {
+              "Ref": "AWS::NoValue"
+            },
+            {
+              "Ref": "BucketName"
+            }
+          ]
+        }
+      }
+    },
+    "LabelDetectFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "Pember_Lab4_301132685::Pember_Lab4_301132685.Function::FunctionHandler",
+        "Runtime": "dotnet6",
+        "CodeUri": "",
+        "Description": "Default function",
+        "MemorySize": 256,
+        "Timeout": 30,
+        "Role": null,
+        "Policies": [
+          "AWSLambda_FullAccess",
+          "AmazonRekognitionReadOnlyAccess",
+          "AmazonS3FullAccess"
+        ],
+        "Events": {
+          "NewImagesBucket": {
+            "Type": "S3",
+            "Properties": {
+              "Bucket": {
+                "Ref": "Bucket"
+              },
+              "Events": [
+                "s3:ObjectCreated:*"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "BucketForImages": {
+      "Value": {
+        "Ref": "Bucket"
+      },
+      "Description": "Upload images to this bucket to trigger the Lambda function"
+    }
+  }
+}
